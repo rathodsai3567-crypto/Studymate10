@@ -1,22 +1,56 @@
 name: Build APK
-on: [push]
+
+on:
+  workflow_dispatch:
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build web app
+        run: npm run build
+
       - name: Setup Java
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
-          java-version: '17'
-      - name: Make gradlew executable
-        run: chmod +x./gradlew
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Capacitor
+        run: npm install @capacitor/core @capacitor/cli @capacitor/android
+
+      - name: Initialize Capacitor
+        run: |
+          npx cap init "StudyMate 10" "com.studymate10.app" --web-dir=dist
+
+      - name: Add Android
+        run: npx cap add android
+
+      - name: Copy web app
+        run: npx cap copy android
+
       - name: Build APK
-        run:./gradlew assembleDebug
+        working-directory: android
+        run: ./gradlew assembleDebug
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: Sai-App-APK
-          path: app/build/outputs/apk/debug/app-debug.apk
+          name: StudyMate-10-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk
